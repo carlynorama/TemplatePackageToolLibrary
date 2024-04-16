@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MyToolLibrary",
+    name: "MyTool",
 //    platforms: [
 //    .macOS(.v13)
 //    ],
