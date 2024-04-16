@@ -11,3 +11,4 @@ DerivedData/
 .swiftpm
 .vscode
 Package.resolved
+testFolder/
