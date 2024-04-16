@@ -190,6 +190,15 @@ struct UtilityHandler {
         let result = try UtilityHandler.privateShell("mv \(target)/{.,}* .; rm -rf \(target)", as: shell)
         print(result)
     }
+
+    //TODO: figure out what's going wrong...
+    // public func moveToCurrentDirectory(from target:String) throws {
+    //     let cwdURL =  URL(fileURLWithPath: pwd)
+    //     print(cwdURL)
+    //     let src = cwdURL.appending(component: target)
+    //     print(src)
+    //     try UtilityHandler.fM.moveItem(at:src, to:cwdURL)
+    // }
     
     public func initializeRepo(at repo:String) throws {
         do {
@@ -211,6 +220,7 @@ struct UtilityHandler {
     
     //not currently used in init script.
     private static let git_guess = URL(fileURLWithPath: "/usr/bin/git")
+    private static let fM = FileManager.default
     
     public static func replaceAllOccurrences(of toReplace:String, in url:URL, with replacement:String) throws {
         guard url.isFileURL else {
@@ -233,7 +243,6 @@ struct UtilityHandler {
     }
     
     public static func enumerateFiles(in url:URL) throws -> [URL] {
-        let fM = FileManager.default
         guard let enumerator = fM.enumerator(at: url,
                                              includingPropertiesForKeys: [.isDirectoryKey],
                                              options: [.skipsHiddenFiles])
@@ -260,7 +269,6 @@ struct UtilityHandler {
     }
     
     public static func enumerateDirectories(in url:URL, pathContains:String? = nil) throws -> [URL] {
-        let fM = FileManager.default
         guard let enumerator = fM.enumerator(at: url,
                                              includingPropertiesForKeys: [.isDirectoryKey],
                                              options: [.skipsHiddenFiles])
@@ -292,7 +300,6 @@ struct UtilityHandler {
     }
 
     public static func rename(at srcURL:URL, to newName:String) throws {
-        let fM = FileManager.default
         var tmp = srcURL.deletingLastPathComponent()
         tmp.append(component: newName)
         try fM.moveItem(at: srcURL, to: tmp)
