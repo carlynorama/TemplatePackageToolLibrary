@@ -2,13 +2,15 @@
 
 The included file setup.swift will do these steps for you.
 
-For the official templates see:
-See: https://github.com/apple/swift-package-manager/blob/main/Sources/Workspace/InitPackage.swift
-
 ```
 chmod +x setup.swift
-./setup.swift all
+./setup.swift all # will fetch repo
+./setup.swift post # if have already cloned repo
 ```
+
+
+For the official templates see:
+See: https://github.com/apple/swift-package-manager/blob/main/Sources/Workspace/InitPackage.swift
 
 ## Get The Repo
 
@@ -63,6 +65,6 @@ git config --global alias.start-repo '!git init . && git add . && git commit --a
 ## Otherwise
 git init . 
 git add . 
-git commit --allow-empty -m "Initialize repository
+git commit --allow-empty -m "Initialize repository"
 ```
 

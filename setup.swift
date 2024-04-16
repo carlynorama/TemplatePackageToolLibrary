@@ -108,6 +108,7 @@ if inputArgs.contains("setupclean") {
     }
 }
 
+//------------------------------------------------------------------------------
 //MARK: tmp level up
 if target == "tmp" {
     do {
@@ -118,9 +119,17 @@ if target == "tmp" {
 }
 
 //------------------------------------------------------------------------------
-//MARK: clean up tmp
+//MARK: init 
+if inputArgs.contains("init") {
+    let repoDir =  target == "tmp" ? "." : target
+    do {
+        try utilities.initializeRepo(at: repoDir)
+    } catch {
+        fatalError("couldn't init due to \(error)")
+    }  
+}
 
-
+//--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 //MARK: UtilityHandler
 struct UtilityHandler {
@@ -172,6 +181,20 @@ struct UtilityHandler {
     public func moveToCurrentDirectory(from target:String) throws {
         let result = try UtilityHandler.privateShell("mv \(target)/{.,}* .; rm -rf \(target)", as: shell)
         print(result)
+    }
+
+    public func initializeRepo(at repo:String) throws {
+        do {
+            if repo == "." {
+                let initString = #"git init . ; git add -- . :!setup.swift ; git commit --allow-empty -m "Initialize repository""#
+                try UtilityHandler.privateShell(initString, as: shell)
+            } else {
+                let initString = #"cd \#(target); git init . ; git add . ; git commit --allow-empty -m "Initialize repository""#
+                try UtilityHandler.privateShell(initString, as: shell)
+            }
+        } catch {
+            fatalError("repo did not init correctly")
+        }
     }
 
     
@@ -318,7 +341,7 @@ extension UtilityHandler {
         init?() {
         let info = ProcessInfo.processInfo
         let environment = info.environment
-        print(environment)
+        //print(environment)
         self.shell = environment["SHELL"]!
         self.path = environment["PATH"]!
         self.pwd = environment["PWD"]!
@@ -334,3 +357,5 @@ extension UtilityHandler {
         self.gitURL =  URL(fileURLWithPath: gitPath.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }
+
+
