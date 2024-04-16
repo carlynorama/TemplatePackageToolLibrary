@@ -7,9 +7,11 @@
 import Foundation
 
 let source = "https://github.com/carlynorama/TemplatePackageToolLibrary.git"
-var target = "testFolder"
+var target = ""
+var newPrefix: String = ""
 
 print("w00t! A New Project!")
+let utilities = UtilityHandler()!
 
 /// the very first element is the current script
 let script = CommandLine.arguments[0]
@@ -18,15 +20,45 @@ print("Script:", script)
 /// you can get the input arguments by dropping the first element
 var inputArgs = CommandLine.arguments.dropFirst()
 
+if inputArgs.contains("-f") {
+    newPrefix = utilities.enclosingFolder
+} else {
+    print("Please enter new package name:")
+        guard let tmpPrefix = readLine(strippingNewline: true) else {
+            fatalError("Can't continue without a name.")
+        }
+        newPrefix = tmpPrefix
+    if target.isEmpty {
+        print("Create subfolder with this name? (alternative is to use this directory)")
+        if let confirm = readLine(strippingNewline: true) {
+            let affirmative = ["y", "Y", "yes", "YES"]
+            if affirmative.contains(confirm) {
+                target = newPrefix
+            } else {
+                print("I'm assuming '\(confirm)' meant you wanted to use this directory. ^C to abort. To avoid these messages, update the setup script.")
+                target = "tmp"
+            }
+        } else {
+            target = "tmp"
+        }
+    }
+    
+}
+
+
 if inputArgs.contains("all") {
-    inputArgs = ["clone", "gitclean", "rename", "init"]
+    inputArgs = ["clone", "gitclean", "rename", "setupclean", "init"]
 }
 
 if inputArgs.contains("post") {
-    inputArgs = ["gitclean", "rename", "init"]
+    inputArgs = ["gitclean", "rename", "setupclean", "init"]
 }
 
-let utilities = UtilityHandler()!
+
+
+if target.isEmpty {
+    target = "tmp"
+}
 //------------------------------------------------------------------------------
 //MARK: clone
 if inputArgs.contains("clone") {
@@ -57,11 +89,6 @@ if inputArgs.contains("gitclean") {
 //------------------------------------------------------------------------------
 //MARK: rename
 if inputArgs.contains("rename") {
-    /// reading lines from the standard input
-    print("Please enter new name prefix:")
-    guard let newPrefix = readLine(strippingNewline: true) else {
-        fatalError("Please provide a name.")
-    }
     print("\(newPrefix) in \(target)")
     
     do {
@@ -69,8 +96,30 @@ if inputArgs.contains("rename") {
     } catch {
         fatalError("name not full replaced due to \(error)")
     }
-    
 }
+
+//------------------------------------------------------------------------------
+//MARK: setupclean
+if inputArgs.contains("setupclean") {
+    do {
+        try utilities.deleteSetupFiles(in: target)
+    } catch {
+        fatalError("problem removing setup files due to \(error)")
+    }
+}
+
+//MARK: tmp level up
+if target == "tmp" {
+    do {
+        try utilities.moveToCurrentDirectory(from: target)
+    } catch {
+        fatalError("problem moving files due to \(error)")
+    }   
+}
+
+//------------------------------------------------------------------------------
+//MARK: clean up tmp
+
 
 //--------------------------------------------------------------------------------------------------
 //MARK: UtilityHandler
@@ -78,8 +127,15 @@ struct UtilityHandler {
 
     let shell:String
     let path:String
+    let pwd:String
 
     let gitURL:URL
+
+    var enclosingFolder:String {
+        let index = pwd.lastIndex(of: "/")!
+        return String(pwd.suffix(from: pwd.index(after: index)))
+    }
+    
 
     public func clone(_ repo: String, to destination: String = "") throws {
         //try UtilityHandler.runPublicProcess(UtilityHandler.git_long, arguments: ["clone", repo, destination])
@@ -90,7 +146,12 @@ struct UtilityHandler {
     }
 
     public func deleteGitFolder(in target: String) throws {
-        try UtilityHandler.privateShell("rm -rf \(target).git", from: shell)
+        try UtilityHandler.privateShell("rm -rf \(target)/.git", as: shell)
+    }
+
+    public func deleteSetupFiles(in target: String) throws {
+        try UtilityHandler.privateShell("rm -f \(target)/SETUP.md", as: shell)
+        try UtilityHandler.privateShell("rm -f \(target)/setup.swift", as: shell)
     }
 
     public func removeExtraGitIgnore(in target: String) throws {
@@ -106,6 +167,11 @@ struct UtilityHandler {
         for file in files {
             try UtilityHandler.replaceAllOccurrences(of:"MyTool", in:file, with: newName)
         }
+    }
+
+    public func moveToCurrentDirectory(from target:String) throws {
+        let result = try UtilityHandler.privateShell("mv \(target)/{.,}* .; rm -rf \(target)", as: shell)
+        print(result)
     }
 
     
@@ -210,7 +276,7 @@ struct UtilityHandler {
     }
 
     @discardableResult
-    public static func  privateShell(_ command: String, from shellPath:String, environment:Dictionary<String,String> = [:]) throws -> String {
+    public static func  privateShell(_ command: String, as shellPath:String, environment:Dictionary<String,String> = [:]) throws -> String {
         let process = Process()
         let pipe = Pipe()
 
@@ -252,9 +318,11 @@ extension UtilityHandler {
         init?() {
         let info = ProcessInfo.processInfo
         let environment = info.environment
+        print(environment)
         self.shell = environment["SHELL"]!
         self.path = environment["PATH"]!
-        guard let gitPath = try? UtilityHandler.privateShell("which git", from: shell) else {
+        self.pwd = environment["PWD"]!
+        guard let gitPath = try? UtilityHandler.privateShell("which git", as: shell) else {
             print("please manually update the script with your git path")
             return nil
         }
@@ -266,5 +334,3 @@ extension UtilityHandler {
         self.gitURL =  URL(fileURLWithPath: gitPath.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }
-
-
