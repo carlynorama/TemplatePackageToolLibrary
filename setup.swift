@@ -35,11 +35,19 @@ var inputArgs = CommandLine.arguments.dropFirst()
 
 if inputArgs.isEmpty {
     if utilities.inDemoRepo {
-        newPrefix = utilities.enclosingFolder
-        target = "tmp"
-        print("Using defaults... \(newPrefix) for name operating in this folder.")
+        let dirName = utilities.enclosingFolder
+        if dirName != "TemplatePackageToolLibrary" {
+            newPrefix = dirName
+            target = "\(utilities.pwd)"
+            print("Using defaults... \(newPrefix) for name operating in this folder.")
+            inputArgs = ["gitclean", "rename", "setupclean", "init"]
+        } else {
+            print(#"Please rename the current folder to your desired new name or run "./setup.swift post" for more options"#)
+            exit(1)
+        }
     } else {
         print(#"I need a little more guidance.  Please rerun with "all" or "clone" to fetch a new copy of the repo, "post" to select an already existing folder."#)
+        exit(1)
     }
 } else if (inputArgs.contains("clone") || inputArgs.contains("all")) {
     if utilities.inDemoRepo {
@@ -135,7 +143,6 @@ if inputArgs.isEmpty {
     }
 }
 
-
 //------------------------------------------------------------------------------
 //MARK: What am I doing?
 if inputArgs.contains("all") {
@@ -180,7 +187,7 @@ if inputArgs.contains("rename") {
     print("\(newPrefix) in \(target)")
     
     do {
-        try utilities.replace("MyTool", with: newPrefix, in: target)
+        try utilities.replace("BunnyBunny", with: newPrefix, in: target)
     } catch {
         fatalError("name not full replaced due to \(error)")
     }
@@ -234,7 +241,7 @@ struct UtilityHandler {
     }
     
     var inDemoRepo:Bool {
-        UtilityHandler.fM.fileExists(atPath: "Sources/MyToolCLI/MyToolCLI.swift")
+        UtilityHandler.fM.fileExists(atPath: "Sources/BunnyBunnyCLI/BunnyBunnyCLI.swift")
     }
     
     
