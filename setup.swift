@@ -16,10 +16,6 @@ let affirmative = ["y", "Y", "yes", "YES"]
 let negative = ["n", "N", "no", "NO"]
 let abort = ["^C", "exit", "quit", "q", "e"]
 
-func containsRefusal(_ response:String) -> Bool {
-    negative.contains(response) || abort.contains(response)
-}
-
 print("w00t! A New Project!")
 let utilities = UtilityHandler()!
 
@@ -32,7 +28,7 @@ var inputArgs = CommandLine.arguments.dropFirst()
 
 //------------------------------------------------------------------------------
 //MARK: Name & Target Dir
-
+//MARK: No Args
 if inputArgs.isEmpty {
     if utilities.inDemoRepo {
         let dirName = utilities.enclosingFolder
@@ -49,6 +45,7 @@ if inputArgs.isEmpty {
         print(#"I need a little more guidance.  Please rerun with "all" or "clone" to fetch a new copy of the repo, "post" to select an already existing folder."#)
         exit(1)
     }
+//MARK: clone & all path
 } else if (inputArgs.contains("clone") || inputArgs.contains("all")) {
     if utilities.inDemoRepo {
         print(#"seems like you've already downloaded the repo. Did you mean to run "./setup.swift post -f"?"#)
@@ -58,30 +55,19 @@ if inputArgs.isEmpty {
         newPrefix = utilities.enclosingFolder
         target = "tmp"
     } else {
-        print("Please enter new package name. Press enter to use directory name or type exit to leave the program.")
-        let tmpPrefix = readLine(strippingNewline: true) 
-
-        if let tmpPrefix {
-                if containsRefusal(tmpPrefix) {
-                print("Seems like you don't want to continue.")
-                exit(1) 
-            }
-            newPrefix = tmpPrefix
-        } else {
-            newPrefix = utilities.enclosingFolder
-        }
-
+        newPrefix = getNameOrDie()
         if target.isEmpty {
             print(#"Create subfolder called "\#(newPrefix)"? (y, n (use this directory), alternate path)"#)
             if let confirm = readLine(strippingNewline: true) {
-                if abort.contains(confirm) {
-                    exit(1) }
+                
+                checkForExitRequest(confirm, includeNegative: false)
+
                 if affirmative.contains(confirm) {
                     target = newPrefix }
                 else if negative.contains(confirm) {
                     target = newPrefix } 
                 else if !confirm.isEmpty {
-                    print("I'm assuming '\(confirm)' was an alternate path. ^C to abort. To avoid these messages, update the setup script.")
+                    print("Assuming '\(confirm)' was an alternate path. ^C to abort. To avoid these messages, update the setup script.")
                     target = confirm} 
                 else {
                     print("Final files will be in this directory. ^C to abort. To avoid these messages, update the setup script.")
@@ -92,6 +78,7 @@ if inputArgs.isEmpty {
             }
         }
     }
+//MARK: no new download path
 } else {
     if utilities.inDemoRepo {
         target = "\(utilities.pwd)"
@@ -99,13 +86,7 @@ if inputArgs.isEmpty {
             newPrefix = utilities.enclosingFolder
         }
         else {
-            print("Please enter new package name. Leave empty to use directory name.")
-            let tmpPrefix = readLine(strippingNewline: true)
-            if let tmpPrefix, !tmpPrefix.isEmpty {
-                newPrefix = tmpPrefix
-            } else {
-                newPrefix = URL(filePath: target).lastPathComponent
-            }
+           newPrefix = getNameOrDie()
         }
     } else {
         print("Where is the repo you want me to update?")
@@ -113,34 +94,47 @@ if inputArgs.isEmpty {
             print(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
             exit(1)
         }
-        if containsRefusal(tmpPath1) {
-            print("Seems like you don't want to continue.")
-            exit(1) 
-        }
-        else if tmpPath1.contains("../") {
+
+        checkForExitRequest(tmpPath1)
+
+        if tmpPath1.contains("../") {
             print(#"Sorry. I can't handle relative paths so well yet. Please try again entering a subpath or a full path."#)
             guard let tmpPath2 = readLine(strippingNewline: true) else {
                 print(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
                 exit(1)
             }
-            if containsRefusal(tmpPath2) {
-                print("Seems like you don't want to continue.")
-                exit(1) 
-            }
+            checkForExitRequest(tmpPath2)
             target = tmpPath2
         } else {
             target = tmpPath1
         }
         
-        print("Please enter new package name. Leave empty to use directory name.")
-        let tmpPrefix = readLine(strippingNewline: true)
-        if let tmpPrefix, !tmpPrefix.isEmpty {
-            newPrefix = tmpPrefix
-        } else {
-            newPrefix = URL(filePath: target).lastPathComponent
-        }
+        newPrefix = getNameOrDie()
         
     }
+}
+
+func checkForExitRequest(_ input:String, includeNegative:Bool = true) {
+    if abort.contains(input) || (includeNegative && negative.contains(input)) {
+        print("Seems like you don't want to continue.")
+        exit(1) 
+    }
+}
+
+func getNameOrDie() -> String {
+    print("Please enter new package name. Press enter to use directory name or type exit to leave the program.")
+        let tmpPrefix = readLine(strippingNewline: true) 
+
+        if let tmpPrefix {
+            checkForExitRequest(tmpPrefix)
+            if !tmpPrefix.isEmpty {
+                return tmpPrefix
+            } else {
+                return utilities.enclosingFolder
+            }
+        } else {
+            return utilities.enclosingFolder
+        }
 }
 
 //------------------------------------------------------------------------------
