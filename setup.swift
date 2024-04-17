@@ -10,6 +10,10 @@ var target = ""
 var newPrefix = ""
 var commandArgs:[String] = [] //will provide defaults if none provided.
 
+//Files that will be deleted by script.
+var setupFiles = ["setup.swift", "SETUP.md"]
+
+//UI Preferences
 let affirmative = ["y", "Y", "yes", "YES"]
 let negative = ["n", "N", "no", "NO"]
 let abort = ["^C", "exit", "quit", "q", "e"]
@@ -167,12 +171,15 @@ struct UtilityHandler {
     }
     
     public func deleteGitFolder(in target: String) throws {
+        //TODO: not windows proof. 
         try UtilityHandler.privateShell("rm -rf \(target)/.git", as: shell)
     }
     
     public func deleteSetupFiles(in target: String) throws {
-        try UtilityHandler.privateShell("rm -f \(target)/SETUP.md", as: shell)
-        try UtilityHandler.privateShell("rm -f \(target)/setup.swift", as: shell)
+        for file in setupFiles {
+            //TODO: not windows proof. 
+            try UtilityHandler.privateShell("rm -f \(target)/\(file)", as: shell)
+        }
     }
     
     public func removeExtraGitIgnore(in target: String) throws {
