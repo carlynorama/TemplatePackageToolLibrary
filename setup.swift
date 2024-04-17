@@ -3,26 +3,54 @@
 //    chmod +x setup.swift
 //    ./setup.swift clone clean
 
+//TODO: Verify target is a valid target before continuing after clone / before git clean
+
 import Foundation
 
 let source = "https://github.com/carlynorama/TemplatePackageToolLibrary.git"
 var target = ""
 var newPrefix = ""
-var commandArgs:[String] = [] //will provide defaults if none provided.
+var commandArgs:[String] = [] //will provide defaults if none provided via args.
 
+
+let helpText = """
+OVERVIEW: A script for preparing a template repository for use
+
+USAGE: ./setup.swift [-f] [[all | post] | [other options]]
+
+OPTIONS:
+    -f            Bypass prompts to detect vars from PWD
+    all           Runs every command.
+    post          Runs every command after clone.
+    clone         Downloads the repo in 'source'  
+    gitclean      Removes connection to template repo, etc. 
+    rename        Replaces phrase MyTool with 'newPrefix' 
+    setupclean    Removes files listed in 'setupFiles' 
+    init          Initializes a new git repo, makes first commit
+"""
+
+//Files that will be deleted by script.
+var setupFiles = ["setup.swift", "SETUP.md"]
+
+//UI Preferences
 let affirmative = ["y", "Y", "yes", "YES"]
 let negative = ["n", "N", "no", "NO"]
 let abort = ["^C", "exit", "quit", "q", "e"]
 
-print("w00t! A New Project!")
-let utilities = UtilityHandler()!
 
-/// the very first element is the current script
+//MARK: Initial Arg Checks
 let script = CommandLine.arguments[0]
-
-/// you can get the input arguments by dropping the first element
 var inputArgs = CommandLine.arguments.dropFirst()
 
+if checkForHelpRequest(in: inputArgs) {
+    print()
+    print(helpText)
+    exit(0)
+}
+
+//MARK: Begin Template Transform
+print("w00t! A New Project!")
+let utilities = UtilityHandler()!
 //------------------------------------------------------------------------------
 //MARK: Name & Target Dir
 
@@ -167,12 +195,15 @@ struct UtilityHandler {
     }
     
     public func deleteGitFolder(in target: String) throws {
+        //TODO: not windows proof. 
         try UtilityHandler.privateShell("rm -rf \(target)/.git", as: shell)
     }
     
     public func deleteSetupFiles(in target: String) throws {
-        try UtilityHandler.privateShell("rm -f \(target)/SETUP.md", as: shell)
-        try UtilityHandler.privateShell("rm -f \(target)/setup.swift", as: shell)
+        for file in setupFiles {
+            //TODO: not windows proof. 
+            try UtilityHandler.privateShell("rm -f \(target)/\(file)", as: shell)
+        }
     }
     
     public func removeExtraGitIgnore(in target: String) throws {
@@ -435,6 +466,7 @@ struct UtilityHandler {
     enum CommandError: Error {
         case unknownError(exitCode: Int32)
     }
+
     //--------------------------------------------------------------------------------------------------
 }
 
@@ -613,6 +645,28 @@ func findOnDisk(args:ArraySlice<String>) -> (name:String, destination:String, co
             return (lastComponent, destination, commands)
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+//HELP
+
+//WARNING - This will spew out help for all sorts of h leading input.
+//Better to start permissive offering help when things are such a mess. 
+func checkForHelpRequest(in args:ArraySlice<String>) -> Bool {
+    return true
+    // let sorted = args.sorted()
+    // for item in sorted {
+    //     print(item)
+    //     if let first = item.first  {
+    //         switch first {
+    //             case "h": return true
+    //             //TODO: version that checks if --
+    //             case "-": if item.contains("h") { return true } ; return false
+    //             default: return false
+    //         }
+    //     }
+    // }
+    // return false
 }
 
 
