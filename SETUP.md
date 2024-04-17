@@ -58,10 +58,7 @@ gh repo clone carlynorama/TemplatePackageToolLibrary
 Using git, example shows cloning it the directory you're in
 
 ```
-TODO - TEST AND FIX
-git clone https://myrepo.com/git.git temp
-mv temp/.git code/.git
-rm -rf temp
+git clone https://github.com/carlynorama/TemplatePackageToolLibrary.git
 ```
 
 ### Strip it's relationship to parent repo
