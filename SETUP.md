@@ -1,13 +1,14 @@
-# MyToolLibrary
+# TemplatePackageToolLibrary
 
 The included file setup.swift will do these steps for you.
 
 ```
 chmod +x setup.swift
-./setup.swift all # will fetch repo
+./setup.swift all # will fetch a new copy of the repo
 ./setup.swift post # if have already cloned repo
 ```
 
+Use the the `-f` flag with either if you'd like to automate using the current folder as location and name.  
 
 For the official templates see:
 See: https://github.com/apple/swift-package-manager/blob/main/Sources/Workspace/InitPackage.swift
