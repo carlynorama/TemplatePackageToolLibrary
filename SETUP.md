@@ -20,7 +20,9 @@ Running options:
 ./setup.swift post # if have already cloned repo
 ```
 
-Add the `-f` flag with either of the above option if you'd like to automate using the current folder as location and name.  
+Add the `-f` flag with either of the above option if you'd like to automate using the current folder as location and name. 
+
+Supplying values at the top of the script will also shorten, or prevent entirely, the dialog tree.
 
 Each step can also be run one by one by hand:
 
@@ -56,10 +58,7 @@ gh repo clone carlynorama/TemplatePackageToolLibrary
 Using git, example shows cloning it the directory you're in
 
 ```
-TODO - TEST AND FIX
-git clone https://myrepo.com/git.git temp
-mv temp/.git code/.git
-rm -rf temp
+git clone https://github.com/carlynorama/TemplatePackageToolLibrary.git
 ```
 
 ### Strip it's relationship to parent repo
