@@ -22,34 +22,70 @@ var inputArgs = CommandLine.arguments.dropFirst()
 
 //------------------------------------------------------------------------------
 //MARK: Name & Target Dir
-if inputArgs.contains("-f") {
-    newPrefix = utilities.enclosingFolder
-    target = "tmp"
-} else {
-    print("Please enter new package name:")
-    guard let tmpPrefix = readLine(strippingNewline: true) else {
-        fatalError("Can't continue without a name.")
-    }
-    newPrefix = tmpPrefix
-    if target.isEmpty {
-        print("Create subfolder with this name? (alternative is to use this directory)")
-        if let confirm = readLine(strippingNewline: true) {
-            let affirmative = ["y", "Y", "yes", "YES"]
-            if affirmative.contains(confirm) {
-                target = newPrefix
+if (inputArgs.contains("clone") || inputArgs.contains("all")) {
+    if inputArgs.contains("-f") {
+        newPrefix = utilities.enclosingFolder
+        target = "tmp"
+    } else {
+        print("Please enter new package name:")
+        guard let tmpPrefix = readLine(strippingNewline: true) else {
+            fatalError("Can't continue without a name.")
+        }
+        newPrefix = tmpPrefix
+        if target.isEmpty {
+            print("Create subfolder with this name? (alternative is to use this directory)")
+            if let confirm = readLine(strippingNewline: true) {
+                let affirmative = ["y", "Y", "yes", "YES"]
+                if affirmative.contains(confirm) {
+                    target = newPrefix
+                } else if !confirm.isEmpty {
+                    print("I'm assuming '\(confirm)' was an alternate path. ^C to abort. To avoid these messages, update the setup script.")
+                    target = confirm
+                } else {
+                    print("Final files will be in this directory. ^C to abort. To avoid these messages, update the setup script.")
+                    target = "tmp"
+                }
             } else {
-                print("I'm assuming '\(confirm)' meant you wanted to use this directory. ^C to abort. To avoid these messages, update the setup script.")
                 target = "tmp"
             }
-        } else {
-            target = "tmp"
         }
     }
+} else {
+    if utilities.inDemoRepo {
+        target = "\(utilities.pwd)"
+        print(target)
+        print("Please enter new package name:")
+        guard let tmpPrefix = readLine(strippingNewline: true) else {
+            fatalError("Can't continue without a name.")
+        }
+        newPrefix = tmpPrefix
+    } else {
+        print("Where is the repo you want me to update?")
+        guard let tmpPath1 = readLine(strippingNewline: true) else {
+            fatalError(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
+        }
+        if tmpPath1.contains("../") {
+            print(#"Sorry. I can't handle relative paths so well yet. Please try again entering a subpath or a full path."#)
+            guard let tmpPath2 = readLine(strippingNewline: true) else {
+                fatalError(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
+            }
+            target = tmpPath2
+        } else {
+            target = tmpPath1
+        }
+        
+        print("Please enter new package name. Leave empty to use directory.")
+        let tmpPrefix = readLine(strippingNewline: true)
+        if let tmpPrefix, !tmpPrefix.isEmpty {
+            newPrefix = tmpPrefix
+        } else {
+            print("SAY SOMETHING")
+            print(URL(filePath: target))
+            newPrefix = URL(filePath: target).lastPathComponent
+        }
+        
+    }
 }
-if target.isEmpty {
-    fatalError("what did I miss?")
-}
-
 //------------------------------------------------------------------------------
 //MARK: What am I doing?
 if inputArgs.contains("all") {
@@ -147,6 +183,10 @@ struct UtilityHandler {
         return String(pwd.suffix(from: pwd.index(after: index)))
     }
     
+    var inDemoRepo:Bool {
+        UtilityHandler.fM.fileExists(atPath: "Sources/MyToolCLI/MyToolCLI.swift")
+    }
+    
     
     public func clone(_ repo: String, to destination: String = "") throws {
         //try UtilityHandler.runPublicProcess(UtilityHandler.git_long, arguments: ["clone", repo, destination])
@@ -190,7 +230,7 @@ struct UtilityHandler {
         let result = try UtilityHandler.privateShell("mv \(target)/{.,}* .; rm -rf \(target)", as: shell)
         print(result)
     }
-
+    
     //TODO: figure out what's going wrong...
     // public func moveToCurrentDirectory(from target:String) throws {
     //     let cwdURL =  URL(fileURLWithPath: pwd)
@@ -298,15 +338,15 @@ struct UtilityHandler {
         return folders
         
     }
-
+    
     public static func rename(at srcURL:URL, to newName:String) throws {
         var tmp = srcURL.deletingLastPathComponent()
         tmp.append(component: newName)
         try fM.moveItem(at: srcURL, to: tmp)
     }
     
-//--------------------------------------------------------------------------------------------------
-//MARK: Process and Shell 
+    //--------------------------------------------------------------------------------------------------
+    //MARK: Process and Shell
     public static func runPublicProcess(_ url:URL,
                                         arguments:[String] = [],
                                         environment:Dictionary<String,String> = [:]
