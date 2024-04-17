@@ -579,7 +579,8 @@ func findOnDisk(args:ArraySlice<String>) -> (name:String, destination:String, co
             return (utilities.lastComponent(of: utilities.pwd), utilities.pwd, commands)
         }
         else {
-            return (getNameOrDie(), utilities.pwd, commands)
+            let name = getNameOrDie()
+            return (name, newTargetOrDie(try: name), commands)
         }
     } else {
         print("Where is the repo you want me to update?")
@@ -613,3 +614,29 @@ func findOnDisk(args:ArraySlice<String>) -> (name:String, destination:String, co
         }
     }
 }
+
+
+//MARK: Linux Support
+
+#if os(Linux)
+
+//https://github.com/apple/swift-corelibs-foundation/blob/36a411b304063de2cbd3fe06adc662e7648d5a9d/Sources/Foundation/URL.swift#L749
+//also swift-foundation / Sources/FoundationEssentials/UTL+Stub.swift
+//Should this be a #if !FOUNDATION_FRAMEWORK instead of if os(Linux)
+//TODO: isDirectory one, too. 
+extension URL {
+    public func appending(component:String) -> Self {
+        self.appendingPathComponent(path)
+    }
+
+    mutating public func append(component:String) {
+        self.appendPathComponent(component)
+    }
+
+    public init(filePath:String) {
+        //TODO: This force unwrap isn't great.
+        self = .init(string:filePath)!
+    }
+}
+
+#endif
