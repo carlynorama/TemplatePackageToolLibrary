@@ -3,6 +3,8 @@
 //    chmod +x setup.swift
 //    ./setup.swift clone clean
 
+//TODO: n response confusing
+//TODO: Filenames not updated yet.  
 
 import Foundation
 
