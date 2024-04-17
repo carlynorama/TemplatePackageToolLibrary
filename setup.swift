@@ -3,14 +3,12 @@
 //    chmod +x setup.swift
 //    ./setup.swift clone clean
 
-//TODO: n response confusing
-//TODO: Filenames not updated yet.
-
 import Foundation
 
 let source = "https://github.com/carlynorama/TemplatePackageToolLibrary.git"
 var target = ""
-var newPrefix: String = ""
+var newPrefix = ""
+var commandArgs:[String] = [] //will provide defaults if none provided.
 
 let affirmative = ["y", "Y", "yes", "YES"]
 let negative = ["n", "N", "no", "NO"]
@@ -29,7 +27,6 @@ var inputArgs = CommandLine.arguments.dropFirst()
 //MARK: Name & Target Dir
 
 //MARK: Use values from this script if set.
-//TODO: does not currently include the setting of default argument set?
 if !target.isEmpty || !newPrefix.isEmpty {
     print("Using hardcoded defaults")
     if target.isEmpty {
@@ -39,95 +36,21 @@ if !target.isEmpty || !newPrefix.isEmpty {
         newPrefix = utilities.lastComponent(of: target)
     }
     print("Using name \(newPrefix) in directory \(target)")
+    
+    commandArgs = determineCommandSet(from: inputArgs)
 }
 //MARK: Prompt for needed information
 else {
-    //MARK: no arguments
-    if inputArgs.isEmpty {
-        if utilities.inDemoRepo {
-            let dirName = utilities.enclosingFolder
-            if dirName != "TemplatePackageToolLibrary" {
-                newPrefix = dirName
-                target = "\(utilities.pwd)"
-                print("Using defaults... \(newPrefix) for name operating in this folder.")
-                inputArgs = ["gitclean", "rename", "setupclean", "init"]
-            } else {
-                print(#"Please rename the current folder to your desired new name or run "./setup.swift post" for more options"#)
-                exit(1)
-            }
-        } else {
-            print(#"I need a little more guidance.  Please rerun with "all" or "clone" to fetch a new copy of the repo, "post" to select an already existing folder."#)
-            exit(1)
-        }
-    //MARK: clone & all path
-    } else if (inputArgs.contains("clone") || inputArgs.contains("all")) {
-        
-        if utilities.inDemoRepo {
-            print(#"seems like you've already downloaded the repo. Did you mean to run "./setup.swift post -f"?"#)
-            exit(1)
-        }
-        if inputArgs.contains("-f") {
-            newPrefix = utilities.enclosingFolder
-            target = "tmp"
-        } else {
-            newPrefix = getNameOrDie()
-            if target.isEmpty {
-                print(#"Create subfolder called "\#(newPrefix)"? (y, n (use this directory), alternate path)"#)
-                if let confirm = readLine(strippingNewline: true) {
-                    
-                    checkForExitRequest(confirm, includeNegative: false)
-                    
-                    if affirmative.contains(confirm) {
-                        target = newPrefix }
-                    else if negative.contains(confirm) {
-                        target = newPrefix }
-                    else if !confirm.isEmpty {
-                        print("Assuming '\(confirm)' was an alternate path. ^C to abort. To avoid these messages, update the setup script.")
-                        target = confirm}
-                    else {
-                        print("Final files will be in this directory. ^C to abort. To avoid these messages, update the setup script.")
-                        target = "tmp"
-                    }
+    let result = if inputArgs.isEmpty {
+                    noArgumentsProvided()
+                } else if (inputArgs.contains("clone") || inputArgs.contains("all")) {
+                    downloadRequired(args: inputArgs)
                 } else {
-                    target = "tmp"
+                    findOnDisk(args: inputArgs)
                 }
-            }
-        }
-    //MARK: no new download path
-    } else {
-        if utilities.inDemoRepo {
-            target = "\(utilities.pwd)"
-            if inputArgs.contains("-f") {
-                newPrefix = utilities.lastComponent(of: target)
-            }
-            else {
-                newPrefix = getNameOrDie()
-            }
-        } else {
-            print("Where is the repo you want me to update?")
-            guard let tmpPath1 = readLine(strippingNewline: true) else {
-                print(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
-                exit(1)
-            }
-            
-            checkForExitRequest(tmpPath1)
-            
-            if tmpPath1.contains("../") {
-                print(#"Sorry. I can't handle relative paths so well yet. Please try again entering a subpath or a full path."#)
-                guard let tmpPath2 = readLine(strippingNewline: true) else {
-                    print(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
-                    exit(1)
-                }
-                checkForExitRequest(tmpPath2)
-                target = tmpPath2
-            } else {
-                target = tmpPath1
-            }
-            
-            newPrefix = getNameOrDie()
-            
-        }
-    }
+    newPrefix = result.name
+    target = result.destination
+    commandArgs = result.commands
 }
 
 
@@ -154,14 +77,131 @@ func getNameOrDie() -> String {
     }
 }
 
-//------------------------------------------------------------------------------
-//MARK: What am I doing?
-if inputArgs.contains("all") {
-    inputArgs = ["clone", "gitclean", "rename", "setupclean", "init"]
+func newTargetOrDie(try name:String) -> String {
+    print(#"Create subfolder called "\#(name)"? (y or empty (to create directory), n (use this directory), or enter an alternate path)"#)
+    if let confirm = readLine(strippingNewline: true) {
+        
+        checkForExitRequest(confirm, includeNegative: false)
+        
+        if affirmative.contains(confirm) { return name }
+        else if negative.contains(confirm) { return "tmp" }
+        
+        else if !confirm.isEmpty {
+            print("Assuming '\(confirm)' was an alternate path.")
+            return pathHelper(confirm)
+        }
+        else {
+            print("Making subdirectory")
+            return name
+        }
+    } else {
+        return name
+    }
 }
 
-if inputArgs.contains("post") {
-    inputArgs = ["gitclean", "rename", "setupclean", "init"]
+
+func pathHelper(_ input:String) -> String {
+    if input.contains("../") {
+        print(#"Sorry. I can't handle relative paths so well yet. Please try again entering a subpath or a full path."#)
+        guard let tryAgain = readLine(strippingNewline: true) else {
+            print(#"Can't continue without a repo location. Did you mean to use "./setup.swift all"?"#)
+            exit(1)
+        }
+        checkForExitRequest(tryAgain)
+        return tryAgain
+    }
+    return input
+}
+
+func determineCommandSet(from args:ArraySlice<String>) -> [String]  {
+    if args.contains("all") {
+        return ["clone", "gitclean", "rename", "setupclean", "init"]
+    }
+
+    if args.contains("post") {
+       return ["gitclean", "rename", "setupclean", "init"]
+    }
+    return args.map { String($0) }
+}
+
+func noArgumentsProvided() -> (name:String, destination:String, commands:[String]) {
+    if utilities.inDemoRepo {
+        let dirName = utilities.enclosingFolder
+        if dirName != "TemplatePackageToolLibrary" {
+            let name = dirName
+            let destination = "\(utilities.pwd)"
+            print("Using defaults... \(newPrefix) for name operating in this folder.")
+            let commands = !commandArgs.isEmpty ? commandArgs : ["gitclean", "rename", "setupclean", "init"]
+            return (name, destination, commands)
+        } else {
+            print(#"Please rename the current folder to your desired new name or run "./setup.swift post" for more options"#)
+            exit(1)
+        }
+    } else {
+        print(#"I need a little more guidance.  Please rerun with "all" or "clone" to fetch a new copy of the repo, or "post" to select an already existing folder."#)
+        exit(1)
+    }
+}
+
+func downloadRequired(args:ArraySlice<String>) -> (name:String, destination:String, commands:[String]) {
+    
+    let commands = determineCommandSet(from: args)
+    
+    if utilities.inDemoRepo {
+        print(#"seems like you've already downloaded the repo. Did you mean to run "./setup.swift post -f"?"#)
+        exit(1)
+    }
+    
+    if inputArgs.contains("-f") {
+        return (utilities.enclosingFolder, "tmp", commands)
+    } else {
+        let name = getNameOrDie()
+        return (name, newTargetOrDie(try: name), commands)
+    }
+}
+
+func findOnDisk(args:ArraySlice<String>) -> (name:String, destination:String, commands:[String]) {
+    
+    let commands = determineCommandSet(from: args)
+    
+    if utilities.inDemoRepo {
+        if inputArgs.contains("-f") {
+            return (utilities.lastComponent(of: utilities.pwd), utilities.pwd, commands)
+        }
+        else {
+            return (getNameOrDie(), utilities.pwd, commands)
+        }
+    } else {
+        print("Where is the repo you want me to update?")
+        guard let tmpPath1 = readLine(strippingNewline: true) else {
+            print(#"Can't continue without a repo. Did you mean to use "./setup.swift all"?"#)
+            exit(1)
+        }
+        checkForExitRequest(tmpPath1)
+        let destination = pathHelper(tmpPath1)
+        let lastComponent = utilities.lastComponent(of: destination)
+        
+        if args.contains("-f") {
+            return (lastComponent, destination, commands)
+        }
+        
+        print("Did you want to use \(lastComponent) for the name? (y or empty for yes, n or exit to leave program, other response to use that for the name.)" )
+        
+        let nameResponse = readLine(strippingNewline: true)
+        
+        if let nameResponse {
+            checkForExitRequest(nameResponse)
+            if affirmative.contains(nameResponse) {
+                return (lastComponent, destination, commands)
+            } else if nameResponse.isEmpty {
+                return (lastComponent, destination, commands)
+            } else {
+                return (nameResponse, destination, commands)
+            }
+        } else {
+            return (lastComponent, destination, commands)
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
