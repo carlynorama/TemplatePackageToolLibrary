@@ -56,7 +56,7 @@ if (inputArgs.contains("clone") || inputArgs.contains("all")) {
     if utilities.inDemoRepo {
         target = "\(utilities.pwd)"
         print(target)
-        print("Please enter new package name:")
+        print("Please enter new package name: (hit return to use directory name)")
         guard let tmpPrefix = readLine(strippingNewline: true) else {
             fatalError("Can't continue without a name.")
         }
