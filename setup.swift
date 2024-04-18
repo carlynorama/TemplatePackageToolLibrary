@@ -59,7 +59,8 @@ if !target.isEmpty || !newPrefix.isEmpty {
     print("Using hardcoded defaults")
     if target.isEmpty {
         //creating a subfolder by default is safer.
-        target = "\(utilities.pwd)/newPrefix"
+        //TODO: hard coded forward slash flag
+        target = "\(utilities.pwd)/\(newPrefix)"
     } else if newPrefix.isEmpty {
         newPrefix = utilities.lastComponent(of: target)
     }
@@ -195,19 +196,20 @@ struct UtilityHandler {
     }
     
     public func deleteGitFolder(in target: String) throws {
-        //TODO: not windows proof. 
+        //TODO: hard coded forward slash flag
         try UtilityHandler.privateShell("rm -rf \(target)/.git", as: shell)
     }
     
     public func deleteSetupFiles(in target: String) throws {
         for file in setupFiles {
-            //TODO: not windows proof. 
+            //TODO: hard coded forward slash flag
             try UtilityHandler.privateShell("rm -f \(target)/\(file)", as: shell)
         }
     }
     
     public func removeExtraGitIgnore(in target: String) throws {
         //FileManager.default.fileExists(atPath: "\(target)/.gitignore")
+        //TODO: hard coded forward slash flag
         let url = URL(fileURLWithPath: "\(target)/.gitignore")
         try UtilityHandler.trimFrom("#", in: url)
     }
@@ -232,6 +234,7 @@ struct UtilityHandler {
     }
     
     public func moveToCurrentDirectory(from target:String) throws {
+        //TODO: hard coded forward slash flag
         let result = try UtilityHandler.privateShell("mv \(target)/{.,}* .; rm -rf \(target)", as: shell)
         print(result)
     }
