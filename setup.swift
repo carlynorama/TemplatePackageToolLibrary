@@ -667,19 +667,19 @@ func findOnDisk(args:ArraySlice<String>) -> (name:String, destination:String, co
 //Better to start permissive offering help when things are such a mess. 
 func checkForHelpRequest(in args:ArraySlice<String>) -> Bool {
     //return true
-    // let sorted = args.sorted()
-    // for item in sorted {
-    //     print(item)
-    //     if let first = item.first  {
-    //         switch first {
-    //             case "h": return true
-    //             //TODO: version that checks if --
-    //             case "-": if item.contains("h") { return true } ; return false
-    //             default: return false
-    //         }
-    //     }
-    // }
-    // return false
+    let sorted = args.sorted()
+    for item in sorted {
+        print(item)
+        if let first = item.first  {
+            switch first {
+                case "h": return true
+                //TODO: version that checks if --
+                case "-": if item.contains("h") { return true } ; return false
+                default: return false
+            }
+        }
+    }
+    return false
 }
 
 //--------------------------------------------------------------------------------------------------
