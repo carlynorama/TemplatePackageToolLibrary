@@ -55,12 +55,20 @@ let utilities = UtilityHandler()!
 //MARK: Name & Target Dir
 
 //MARK: Use values from this script if set.
+//TODO: What to put in target to force PWD? 
 if !target.isEmpty || !newPrefix.isEmpty {
     print("Using hardcoded defaults")
     if target.isEmpty {
-        //creating a subfolder by default is safer.
+
+        if utilities.inDemoRepo {
+            target = "\(utilities.pwd)/"
+        } else {
+            //creating a subfolder by default is safer.
+            //but only makes sense if clone is going to happen.
+            target = "\(utilities.pwd)/\(newPrefix)"
+        }
         //TODO: hard coded forward slash flag
-        target = "\(utilities.pwd)/\(newPrefix)"
+        
     } else if newPrefix.isEmpty {
         newPrefix = utilities.lastComponent(of: target)
     }
@@ -658,7 +666,7 @@ func findOnDisk(args:ArraySlice<String>) -> (name:String, destination:String, co
 //WARNING - This will spew out help for all sorts of h leading input.
 //Better to start permissive offering help when things are such a mess. 
 func checkForHelpRequest(in args:ArraySlice<String>) -> Bool {
-    return true
+    //return true
     // let sorted = args.sorted()
     // for item in sorted {
     //     print(item)
