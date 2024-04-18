@@ -10,7 +10,7 @@ No need to compile, but you'll need to give it proper permission to work.
 
 ```
 cd $DIRECTORY_WITH_SCRIPT
-chmod +x setup.swift
+chmod u+x setup.swift
 ```
 
 Running options:
