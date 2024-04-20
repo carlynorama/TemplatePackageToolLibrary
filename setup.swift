@@ -304,7 +304,6 @@ struct UtilityHandler {
     
     public static func rename(at srcURL:URL, to newName:String) throws {
         var tmp = srcURL.deletingLastPathComponent()
-        //TODO: FLAG - did not work fo maartene?
         tmp.append(component: newName)
         try fM.moveItem(at: srcURL, to: tmp)
     }
