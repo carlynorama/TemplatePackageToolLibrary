@@ -120,6 +120,7 @@ if commandArgs.contains("gitclean") {
     } catch SetupError.nothingToRemove {
         print("WARNING: didn't find anything to remove from .gitignore file")
     } catch {
+        //TODO: Fail more gracefully if no gitignore? 
         fatalError("gitignore update failed due to: \(error)")
     }
     
