@@ -1,9 +1,14 @@
 #!/usr/bin/env swift
 
-//    chmod +x setup.swift
-//    ./setup.swift clone clean
+// Quick Start: 
+// if in newly cloned directory, using it's version of the script
+// rename the folder to desired new name to avoid the dialog tree.
+
+// chmod u+x setup.swift
+// ./setup.swift 
 
 //TODO: Verify target is a valid target before continuing after clone / before git clean
+//TODO: Double check what happens when start script from outside dir
 
 import Foundation
 
@@ -291,8 +296,7 @@ struct UtilityHandler {
     public static func trimFrom(_ char:String.Element, in url:URL) throws {
         let string = try String(contentsOf: url)
         guard let index = string.lastIndex(of: char) else{
-            //TODO: throw instead.
-            fatalError("file didn't have the right content to remove.")
+            throw SetupError.gitIgnoreNothingToRemove
         }
         let newFile = string.prefix(upTo: index)
         try newFile.write(to: url, atomically: true, encoding: .utf8)
@@ -300,7 +304,6 @@ struct UtilityHandler {
     
     public static func rename(at srcURL:URL, to newName:String) throws {
         var tmp = srcURL.deletingLastPathComponent()
-        //TODO: FLAG - did not work fo maartene?
         tmp.append(component: newName)
         try fM.moveItem(at: srcURL, to: tmp)
     }
@@ -310,15 +313,13 @@ struct UtilityHandler {
                                              includingPropertiesForKeys: [.isDirectoryKey],
                                              options: [.skipsHiddenFiles])
         else {
-            //TODO: throw
-            fatalError("no files")
+            throw SetupError.noItemsAtURL
         }
         var files:[URL] = []
         for case let fileURL as URL in enumerator {
             guard let resourceValues = try? fileURL.resourceValues(forKeys: [.isDirectoryKey]),
                   let isDirectory = resourceValues.isDirectory else {
-                //TODO: throw
-                fatalError("no resource value")
+                    throw SetupError.couldNotRetrieveNeededResourceInfo
             }
             guard !isDirectory else {
                 continue
@@ -336,15 +337,13 @@ struct UtilityHandler {
                                              includingPropertiesForKeys: [.isDirectoryKey],
                                              options: [.skipsHiddenFiles])
         else {
-            //TODO: throw
-            fatalError("no files")
+            throw SetupError.noItemsAtURL
         }
         var folders:[URL] = []
         for case let dirURL as URL in enumerator {
             guard let resourceValues = try? dirURL.resourceValues(forKeys: [.isDirectoryKey]),
                   let isDirectory = resourceValues.isDirectory else {
-                //TODO: throw
-                fatalError("no resource value")
+                    throw SetupError.couldNotRetrieveNeededResourceInfo
             }
             guard isDirectory else {
                 continue
@@ -367,16 +366,14 @@ struct UtilityHandler {
                                              includingPropertiesForKeys: [.isDirectoryKey],
                                              options: [.skipsHiddenFiles])
         else {
-            //TODO: throw
-            fatalError("no files")
+            throw SetupError.noItemsAtURL
         }
         var files:[URL] = []
         var directories:[URL] = []
         for case let candidateURL as URL in enumerator {
             guard let resourceValues = try? candidateURL.resourceValues(forKeys: [.isDirectoryKey]),
                   let isDirectory = resourceValues.isDirectory else {
-                //TODO: throw
-                fatalError("no resource value")
+                    throw SetupError.couldNotRetrieveNeededResourceInfo
             }
             
             if candidateURL.absoluteString.contains(pathContains)  {
@@ -680,6 +677,23 @@ func checkForHelpRequest(in args:ArraySlice<String>) -> Bool {
         }
     }
     return false
+}
+
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+//MARK: Setup Error
+
+enum SetupError:Error {
+    case unknownError(_ message: String)
+    case gitIgnoreNothingToRemove
+    case noItemsAtURL
+    case couldNotRetrieveNeededResourceInfo
+}
+
+extension SetupError {
+  init(_ message: String) {
+    self = .unknownError(message)
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
