@@ -117,7 +117,7 @@ if commandArgs.contains("gitclean") {
     print("removing template's git traces...")
     do {
         try utilities.removeExtraGitIgnore(in: target)
-    } catch SetupError.gitIgnoreNothingToRemove {
+    } catch SetupError.nothingToRemove {
         print("WARNING: didn't find anything to remove from .gitignore file")
     } catch {
         fatalError("gitignore update failed due to: \(error)")
@@ -298,7 +298,7 @@ struct UtilityHandler {
     public static func trimFrom(_ char:String.Element, in url:URL) throws {
         let string = try String(contentsOf: url)
         guard let index = string.lastIndex(of: char) else{
-            throw SetupError.gitIgnoreNothingToRemove
+            throw SetupError.nothingToRemove
         }
         let newFile = string.prefix(upTo: index)
         try newFile.write(to: url, atomically: true, encoding: .utf8)
@@ -687,7 +687,7 @@ func checkForHelpRequest(in args:ArraySlice<String>) -> Bool {
 
 enum SetupError:Error {
     case unknownError(_ message: String)
-    case gitIgnoreNothingToRemove
+    case nothingToRemove
     case noItemsAtURL
     case couldNotRetrieveNeededResourceInfo
 }
