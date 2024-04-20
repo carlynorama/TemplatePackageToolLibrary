@@ -117,6 +117,8 @@ if commandArgs.contains("gitclean") {
     print("removing template's git traces...")
     do {
         try utilities.removeExtraGitIgnore(in: target)
+    } catch SetupError.gitIgnoreNothingToRemove {
+        print("WARNING: didn't find anything to remove from .gitignore file")
     } catch {
         fatalError("gitignore update failed due to: \(error)")
     }
